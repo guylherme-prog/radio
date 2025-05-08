@@ -1,0 +1,82 @@
+body {
+  background: black;
+  color: limegreen;
+  font-family: monospace;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+}
+
+.radio-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  height: 50px;
+  margin-bottom: 10px;
+}
+
+.vu-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.vu-column {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+}
+
+.vu-segment {
+  width: 15px;
+  height: 8px;
+  background: #222;
+  border-radius: 2px;
+}
+
+.vu-segment.on.green { background: limegreen; }
+.vu-segment.on.yellow { background: yellow; }
+.vu-segment.on.red { background: red; }
+
+.vu-labels {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  height: 180px;
+  color: limegreen;
+  font-size: 10px;
+  margin-right: 5px;
+}
+
+audio {
+  margin-top: 10px;
+  width: 200px;
+}
+
+.channel-label {
+  margin-top: 5px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  text-align: center;
+}
+
+.zero-mark {
+  color: white;
+  font-weight: bold;
+}
