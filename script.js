@@ -34,7 +34,7 @@ const mediaStreams = [
   },
   {
     name: "Canal FDR",
-    embedUrl: "https://wise-stream.mycloudstream.io/public/d5asdzhp",
+    embedUrl: "https://v-us-01.wisestream.io/e4ade538-7924-4359-81ef-b9d4dd229e91.html",
     fallbackUrl: "https://www.fdr.com.br/aovivo",
     type: "iframe"
   }
