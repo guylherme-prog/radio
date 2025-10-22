@@ -28,7 +28,7 @@ const mediaStreams = [
   // 2 TVs sem autoplay
   {
     name: "TV O POVO",
-    embedUrl: "https://wise-stream.mycloudstream.io/player/aovhqllh",
+    embedUrl: "https://v-us-01.wisestream.io/memfs/e8740862-7a1f-45f3-acb2-4f357e144059.m3u8",
     fallbackUrl: "https://www.opovo.com.br/tvopovo",
     type: "iframe"
   },
