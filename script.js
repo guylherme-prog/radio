@@ -1,5 +1,5 @@
 const mediaStreams = [
-  // Todas as 4 rádios com autoplay
+  // Todas as 4 rádios com autoplay 
   {
     name: "CBN Fortaleza",
     url: "https://ice.fabricahost.com.br/cbnfortaleza",
