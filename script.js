@@ -13,7 +13,7 @@ script_content = r"""// script.js - final: resolves redirects, autoplay (attempt
 const mediaStreams = [
   {
     name: "CBN Fortaleza",
-    url: "https://ice.fabricahost.com.br/cbnfortaleza",
+    url: "https://ice4.fabricahost.com.br/cbnfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio"
   },
