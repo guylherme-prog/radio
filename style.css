@@ -306,4 +306,11 @@ footer {
     white-space: nowrap;
     margin-left: -5px;
   }
+  .status-message {
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+}
 }
