@@ -8,7 +8,7 @@ const mediaStreams = [
   },
   {
     name: "Clube FM Fortaleza",
-    url: "https://ice.fabricahost.com.br/clubefmfortaleza",
+    url: "https://ice4.fabricahost.com.br/cbnfortaleza",
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio"
   },
