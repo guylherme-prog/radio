@@ -59,19 +59,19 @@ async function testStreamUrl(stream) {
   if (stream.name.includes('CBN Fortaleza')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbnfortaleza',
-      'https://corsproxy.io/?https://ice.fabricahost.com.br/cbnfortaleza',
+     // 'https://corsproxy.io/?https://ice.fabricahost.com.br/cbnfortaleza',
       'http://ice.fabricahost.com.br/cbnfortaleza'
     );
   } else if (stream.name.includes('Clube FM')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/clubefmfortaleza',
-      'https://corsproxy.io/?https://ice.fabricahost.com.br/clubefmfortaleza', 
+  // 'https://corsproxy.io/?https://ice.fabricahost.com.br/clubefmfortaleza', 
       'http://ice.fabricahost.com.br/clubefmfortaleza'
     );
   } else if (stream.name.includes('CBN Cariri')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbncariri',
-      'https://corsproxy.io/?https://ice.fabricahost.com.br/cbncariri',
+      //'https://corsproxy.io/?https://ice.fabricahost.com.br/cbncariri',
       'http://ice.fabricahost.com.br/cbncariri'
     );
   } else {
