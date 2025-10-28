@@ -48,7 +48,7 @@ const mediaStreams = [
 ];
 
 const SEGMENTS = 20;
-const REFRESH_TIME = 5 * 60 * 1000; // 5 minutes
+const REFRESH_TIME = 30 * 60 * 1000; // 30 minutes
 let userInteracted = false;
 
 // Função para testar URLs e encontrar uma que funcione
