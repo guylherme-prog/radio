@@ -3,7 +3,7 @@ const mediaStreams = [
   {
     name: "CBN Fortaleza",
     url: "https://ice.fabricahost.com.br/cbnfortaleza",
-   
+    proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/cbnfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -11,7 +11,7 @@ const mediaStreams = [
   {
     name: "Clube FM Fortaleza",
     url: "https://ice.fabricahost.com.br/clubefmfortaleza", 
-  
+    proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/clubefmfortaleza",
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio",
     autoplay: true
@@ -19,7 +19,7 @@ const mediaStreams = [
   {
     name: "CBN Cariri",
     url: "https://ice.fabricahost.com.br/cbncariri",
- 
+    proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/cbncariri",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -98,7 +98,7 @@ async function testStreamUrl(stream) {
         // Para URLs diretas, tenta criar um elemento de áudio
         return await new Promise((resolve) => {
           const audioTest = new Audio();
-          audioTest.crossOrigin = "";
+          audioTest.crossOrigin = "anonymous";
           audioTest.preload = "none";
           
           audioTest.addEventListener('canplay', () => {
@@ -202,7 +202,7 @@ function createMediaElements() {
       const audio = document.createElement('audio');
       audio.controls = true;
       audio.loop = true;
-      audio.crossOrigin = "";
+      audio.crossOrigin = "anonymous";
       audio.preload = 'metadata';
       box.appendChild(audio);
 
