@@ -202,7 +202,7 @@ function createMediaElements() {
       const audio = document.createElement('audio');
       audio.controls = true;
       audio.loop = true;
-      audio.crossOrigin = "anonymous";
+      audio.crossOrigin = "";
       audio.preload = 'metadata';
       box.appendChild(audio);
 
