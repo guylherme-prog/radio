@@ -306,7 +306,7 @@ footer {
     white-space: nowrap;
     margin-left: -5px;
   }
-  .status-message {
+.status-message {
   font-size: 0.8rem;
   margin: 0.5rem 0;
   padding: 0.25rem 0.5rem;
