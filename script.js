@@ -3,7 +3,7 @@ const mediaStreams = [
   {
     name: "CBN Fortaleza",
     url: "https://ice.fabricahost.com.br/cbnfortaleza",
-   // proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/cbnfortaleza",
+
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -11,7 +11,7 @@ const mediaStreams = [
   {
     name: "Clube FM Fortaleza",
     url: "https://ice.fabricahost.com.br/clubefmfortaleza", 
-   // proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/clubefmfortaleza",
+
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio",
     autoplay: true
@@ -19,7 +19,7 @@ const mediaStreams = [
   {
     name: "CBN Cariri",
     url: "https://ice.fabricahost.com.br/cbncariri",
-  //  proxyUrl: "https://corsproxy.io/?https://ice.fabricahost.com.br/cbncariri",
+
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -59,19 +59,19 @@ async function testStreamUrl(stream) {
   if (stream.name.includes('CBN Fortaleza')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbnfortaleza',
-     // 'https://corsproxy.io/?https://ice.fabricahost.com.br/cbnfortaleza',
+     
       'http://ice.fabricahost.com.br/cbnfortaleza'
     );
   } else if (stream.name.includes('Clube FM')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/clubefmfortaleza',
-  // 'https://corsproxy.io/?https://ice.fabricahost.com.br/clubefmfortaleza', 
+ 
       'http://ice.fabricahost.com.br/clubefmfortaleza'
     );
   } else if (stream.name.includes('CBN Cariri')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbncariri',
-      //'https://corsproxy.io/?https://ice.fabricahost.com.br/cbncariri',
+     
       'http://ice.fabricahost.com.br/cbncariri'
     );
   } else {
