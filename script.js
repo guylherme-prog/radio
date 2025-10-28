@@ -1,9 +1,8 @@
-// script.js - corrigido: problema CORS resolvido
+// script.js - versão sem proxy
 const mediaStreams = [
   {
     name: "CBN Fortaleza",
     url: "https://ice.fabricahost.com.br/cbnfortaleza",
-
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -11,7 +10,6 @@ const mediaStreams = [
   {
     name: "Clube FM Fortaleza",
     url: "https://ice.fabricahost.com.br/clubefmfortaleza", 
-
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio",
     autoplay: true
@@ -19,7 +17,6 @@ const mediaStreams = [
   {
     name: "CBN Cariri",
     url: "https://ice.fabricahost.com.br/cbncariri",
-
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
     autoplay: true
@@ -59,27 +56,21 @@ async function testStreamUrl(stream) {
   if (stream.name.includes('CBN Fortaleza')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbnfortaleza',
-     
       'http://ice.fabricahost.com.br/cbnfortaleza'
     );
   } else if (stream.name.includes('Clube FM')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/clubefmfortaleza',
- 
       'http://ice.fabricahost.com.br/clubefmfortaleza'
     );
   } else if (stream.name.includes('CBN Cariri')) {
     urlsToTest.push(
       'https://ice.fabricahost.com.br/cbncariri',
-     
       'http://ice.fabricahost.com.br/cbncariri'
     );
   } else {
-    // Para outras rádios, testa a URL original e proxy
+    // Para outras rádios, testa a URL original
     urlsToTest.push(stream.url);
-    if (stream.proxyUrl) {
-      urlsToTest.push(stream.proxyUrl);
-    }
   }
 
   // Testa cada URL
@@ -87,34 +78,24 @@ async function testStreamUrl(stream) {
     try {
       console.log('Testando URL:', testUrl);
       
-      if (testUrl.includes('corsproxy.io')) {
-        // Para proxy, faz uma requisição HEAD para verificar
-        const response = await fetch(testUrl, { method: 'HEAD' });
-        if (response.ok) {
-          console.log('URL funcionou via proxy:', testUrl);
-          return testUrl;
-        }
-      } else {
-        // Para URLs diretas, tenta criar um elemento de áudio
-        return await new Promise((resolve) => {
-          const audioTest = new Audio();
-          audioTest.crossOrigin = "anonymous";
-          audioTest.preload = "none";
-          
-          audioTest.addEventListener('canplay', () => {
-            console.log('URL direta funcionou:', testUrl);
-            resolve(testUrl);
-          });
-          
-          audioTest.addEventListener('error', () => {
-            console.log('URL direta falhou:', testUrl);
-            resolve(null);
-          });
-          
-          audioTest.src = testUrl;
-          setTimeout(() => resolve(null), 3000);
+      // Tenta criar um elemento de áudio
+      return await new Promise((resolve) => {
+        const audioTest = new Audio();
+        audioTest.preload = "none";
+        
+        audioTest.addEventListener('canplay', () => {
+          console.log('URL direta funcionou:', testUrl);
+          resolve(testUrl);
         });
-      }
+        
+        audioTest.addEventListener('error', () => {
+          console.log('URL direta falhou:', testUrl);
+          resolve(null);
+        });
+        
+        audioTest.src = testUrl;
+        setTimeout(() => resolve(null), 3000);
+      });
     } catch (error) {
       console.log('Erro ao testar URL:', testUrl, error);
       continue;
@@ -123,23 +104,6 @@ async function testStreamUrl(stream) {
   
   console.log('Nenhuma URL funcionou para:', stream.name);
   return null;
-}
-
-async function resolveRedirect(url) {
-  try {
-    // Tenta com HEAD primeiro
-    const resp = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, { 
-      method: 'HEAD', 
-      cache: 'no-store' 
-    });
-    if (resp && resp.ok) {
-      return resp.url.replace('https://corsproxy.io/?', '') || url;
-    }
-  } catch (err) {
-    console.warn('HEAD redirect failed for', url, err);
-  }
-  
-  return url;
 }
 
 async function startAutoplayAndUnmute(audioEl) {
@@ -202,7 +166,6 @@ function createMediaElements() {
       const audio = document.createElement('audio');
       audio.controls = true;
       audio.loop = true;
-      audio.crossOrigin = "anonymous";
       audio.preload = 'metadata';
       box.appendChild(audio);
 
@@ -260,12 +223,6 @@ function createMediaElements() {
           
           let workingUrl = stream.url;
           
-          // Para as rádios com problema de CORS, usa o proxy
-          if (stream.name.includes('CBN') || stream.name.includes('Clube FM')) {
-            workingUrl = stream.proxyUrl || `https://corsproxy.io/?${encodeURIComponent(stream.url)}`;
-            status.textContent = 'Usando proxy CORS...';
-          }
-          
           console.log('Configurando áudio para:', stream.name, 'URL:', workingUrl);
           audio.src = workingUrl;
           
@@ -290,14 +247,6 @@ function createMediaElements() {
             status.textContent = 'Erro ao carregar';
             status.style.color = '#ff3333';
             console.error('Erro no áudio:', stream.name, e);
-            
-            // Tenta URL alternativa se disponível
-            if (stream.proxyUrl && audio.src !== stream.proxyUrl) {
-              setTimeout(() => {
-                status.textContent = 'Tentando URL alternativa...';
-                audio.src = stream.proxyUrl;
-              }, 2000);
-            }
           });
           
           // Tenta autoplay se configurado
