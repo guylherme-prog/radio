@@ -1,32 +1,32 @@
-// script.js - versão sem proxy
+// script.js - versão corrigida
 const mediaStreams = [
   {
     name: "CBN Fortaleza",
     url: "https://ice.fabricahost.com.br/cbnfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
-    autoplay: true
+    autoplay: false // Desativei o autoplay para evitar problemas
   },
   {
     name: "Clube FM Fortaleza",
     url: "https://ice.fabricahost.com.br/clubefmfortaleza", 
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio",
-    autoplay: true
+    autoplay: false
   },
   {
     name: "CBN Cariri",
     url: "https://ice.fabricahost.com.br/cbncariri",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio",
-    autoplay: true
+    autoplay: false
   },
   {
     name: "Nova Brasil Fortaleza",
     url: "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_FORAAC.aac",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-nova-br.webp",
     type: "audio",
-    autoplay: true
+    autoplay: false
   },
   {
     name: "TV O POVO",
@@ -46,106 +46,12 @@ const mediaStreams = [
 
 const SEGMENTS = 20;
 const REFRESH_TIME = 5 * 60 * 1000; // 5 minutes
-let userInteracted = false;
-
-// Função para testar URLs e encontrar uma que funcione
-async function testStreamUrl(stream) {
-  const urlsToTest = [];
-  
-  // Adiciona URLs alternativas baseadas no nome da rádio
-  if (stream.name.includes('CBN Fortaleza')) {
-    urlsToTest.push(
-      'https://ice.fabricahost.com.br/cbnfortaleza',
-      'http://ice.fabricahost.com.br/cbnfortaleza'
-    );
-  } else if (stream.name.includes('Clube FM')) {
-    urlsToTest.push(
-      'https://ice.fabricahost.com.br/clubefmfortaleza',
-      'http://ice.fabricahost.com.br/clubefmfortaleza'
-    );
-  } else if (stream.name.includes('CBN Cariri')) {
-    urlsToTest.push(
-      'https://ice.fabricahost.com.br/cbncariri',
-      'http://ice.fabricahost.com.br/cbncariri'
-    );
-  } else {
-    // Para outras rádios, testa a URL original
-    urlsToTest.push(stream.url);
-  }
-
-  // Testa cada URL
-  for (const testUrl of urlsToTest) {
-    try {
-      console.log('Testando URL:', testUrl);
-      
-      // Tenta criar um elemento de áudio
-      return await new Promise((resolve) => {
-        const audioTest = new Audio();
-        audioTest.preload = "none";
-        
-        audioTest.addEventListener('canplay', () => {
-          console.log('URL direta funcionou:', testUrl);
-          resolve(testUrl);
-        });
-        
-        audioTest.addEventListener('error', () => {
-          console.log('URL direta falhou:', testUrl);
-          resolve(null);
-        });
-        
-        audioTest.src = testUrl;
-        setTimeout(() => resolve(null), 3000);
-      });
-    } catch (error) {
-      console.log('Erro ao testar URL:', testUrl, error);
-      continue;
-    }
-  }
-  
-  console.log('Nenhuma URL funcionou para:', stream.name);
-  return null;
-}
-
-async function startAutoplayAndUnmute(audioEl) {
-  if (!userInteracted) {
-    console.log('Aguardando interação do usuário para autoplay...');
-    return false;
-  }
-
-  try {
-    audioEl.muted = false;
-    await audioEl.play();
-    console.log('Autoplay succeeded (unmuted)');
-    return true;
-  } catch (err) {
-    try {
-      audioEl.muted = true;
-      await audioEl.play();
-      console.log('Autoplay succeeded (muted)');
-      
-      // Tenta desmutar após a reprodução iniciar
-      setTimeout(() => {
-        try { 
-          audioEl.muted = false; 
-          console.log('Attempted to unmute'); 
-        } catch(e) {
-          console.log('Could not unmute:', e);
-        }
-      }, 1000);
-      
-      return true;
-    } catch (err2) {
-      console.warn('Autoplay blocked', err2);
-      return false;
-    }
-  }
-}
 
 function createMediaElements() {
   const container = document.getElementById('mediaContainer');
   container.innerHTML = '';
 
-  mediaStreams.forEach(async (stream) => {
+  mediaStreams.forEach((stream) => {
     const box = document.createElement('div');
     box.className = `media-box ${stream.type}-box`;
 
@@ -165,20 +71,21 @@ function createMediaElements() {
     if (stream.type === 'audio') {
       const audio = document.createElement('audio');
       audio.controls = true;
-      audio.loop = true;
-      audio.preload = 'metadata';
-      box.appendChild(audio);
-
+      audio.preload = 'none'; // Mudei para 'none' para evitar pré-carregamento
+      
       const status = document.createElement('div');
       status.className = 'status-message';
-      status.textContent = 'Carregando...';
-      status.style.color = '#ffcc00';
+      status.textContent = 'Clique para carregar';
+      status.style.color = '#666';
       status.style.fontSize = '0.8rem';
       status.style.marginBottom = '1rem';
       box.appendChild(status);
 
+      // Container do VU Meter
       const vuContainer = document.createElement('div');
       vuContainer.className = 'vu-container';
+      
+      // Labels da escala
       const labels = document.createElement('div');
       labels.className = 'vu-labels';
       const scalePoints = ['-30','-25','-20','-15','-9','-6','-3','0','+3','+6','+9','+15'];
@@ -189,6 +96,7 @@ function createMediaElements() {
         labels.appendChild(lbl); 
       });
       
+      // Canal R (Right)
       const leftRow = document.createElement('div'); 
       leftRow.className='channel-row';
       const leftLetter = document.createElement('span'); 
@@ -197,9 +105,14 @@ function createMediaElements() {
       leftRow.appendChild(leftLetter);
       const leftMeter = document.createElement('div'); 
       leftMeter.className='vu-meter';
-      for (let i=0;i<SEGMENTS;i++) leftMeter.appendChild(document.createElement('div')).className='vu-segment';
+      for (let i=0;i<SEGMENTS;i++) {
+        const segment = document.createElement('div');
+        segment.className='vu-segment';
+        leftMeter.appendChild(segment);
+      }
       leftRow.appendChild(leftMeter);
       
+      // Canal L (Left)
       const rightRow = document.createElement('div'); 
       rightRow.className='channel-row';
       const rightLetter = document.createElement('span'); 
@@ -208,7 +121,11 @@ function createMediaElements() {
       rightRow.appendChild(rightLetter);
       const rightMeter = document.createElement('div'); 
       rightMeter.className='vu-meter';
-      for (let i=0;i<SEGMENTS;i++) rightMeter.appendChild(document.createElement('div')).className='vu-segment';
+      for (let i=0;i<SEGMENTS;i++) {
+        const segment = document.createElement('div');
+        segment.className='vu-segment';
+        rightMeter.appendChild(segment);
+      }
       rightRow.appendChild(rightMeter);
       
       vuContainer.appendChild(labels); 
@@ -216,68 +133,59 @@ function createMediaElements() {
       vuContainer.appendChild(rightRow);
       box.appendChild(vuContainer);
 
-      // Configura o áudio
-      (async () => {
-        try {
-          status.textContent = 'Procurando stream...';
-          
-          let workingUrl = stream.url;
-          
-          console.log('Configurando áudio para:', stream.name, 'URL:', workingUrl);
-          audio.src = workingUrl;
-          
-          // Event listeners para status
-          audio.addEventListener('loadstart', () => {
-            status.textContent = 'Conectando...';
-            status.style.color = '#ffcc00';
-          });
-          
-          audio.addEventListener('canplay', () => {
-            status.textContent = 'Pronto para reproduzir';
-            status.style.color = '#00ff88';
-            console.log('Áudio pronto:', stream.name);
-          });
-          
-          audio.addEventListener('play', () => {
-            status.textContent = 'Reproduzindo...';
-            status.style.color = '#00ff88';
-          });
-          
-          audio.addEventListener('error', (e) => {
-            status.textContent = 'Erro ao carregar';
-            status.style.color = '#ff3333';
-            console.error('Erro no áudio:', stream.name, e);
-          });
-          
-          // Tenta autoplay se configurado
-          if (stream.autoplay) {
-            setTimeout(async () => {
-              const ok = await startAutoplayAndUnmute(audio);
-              if (ok) {
-                try { 
-                  startVU(audio, leftMeter, rightMeter); 
-                } catch (e) { 
-                  console.warn('VU start failed for', stream.name, e); 
-                }
-              }
-            }, 1000);
-          }
-          
-          // Inicia VU quando o usuário clicar manualmente
-          audio.addEventListener('play', () => {
-            try { 
-              startVU(audio, leftMeter, rightMeter); 
-            } catch(e) { 
-              console.warn('VU unavailable for', stream.name, e); 
-            }
-          });
-          
-        } catch (error) {
-          console.error('Erro ao configurar áudio para', stream.name, error);
-          status.textContent = 'Erro de configuração';
-          status.style.color = '#ff3333';
+      // Adiciona o áudio por último
+      box.appendChild(audio);
+
+      // Event listeners para o áudio
+      audio.addEventListener('loadstart', () => {
+        status.textContent = 'Conectando...';
+        status.style.color = '#ffcc00';
+      });
+      
+      audio.addEventListener('canplay', () => {
+        status.textContent = 'Pronto para reproduzir';
+        status.style.color = '#00cc00';
+      });
+      
+      audio.addEventListener('play', () => {
+        status.textContent = 'Reproduzindo...';
+        status.style.color = '#00ff00';
+        startVU(audio, leftMeter, rightMeter);
+      });
+      
+      audio.addEventListener('pause', () => {
+        status.textContent = 'Pausado';
+        status.style.color = '#666';
+        stopVU(leftMeter, rightMeter);
+      });
+      
+      audio.addEventListener('waiting', () => {
+        status.textContent = 'Buffering...';
+        status.style.color = '#ffcc00';
+      });
+      
+      audio.addEventListener('error', (e) => {
+        status.textContent = 'Erro ao carregar';
+        status.style.color = '#ff3333';
+        console.error('Erro no áudio:', stream.name, e);
+        
+        // Tenta URL alternativa se disponível
+        if (stream.name.includes('CBN') || stream.name.includes('Clube FM')) {
+          setTimeout(() => {
+            status.textContent = 'Tentando HTTP...';
+            audio.src = stream.url.replace('https://', 'http://');
+          }, 2000);
         }
-      })();
+      });
+      
+      // Configura a fonte do áudio quando o usuário interagir
+      box.addEventListener('click', (e) => {
+        if (e.target !== audio && !audio.src) {
+          status.textContent = 'Carregando stream...';
+          status.style.color = '#ffcc00';
+          audio.src = stream.url;
+        }
+      });
 
     } else if (stream.type === 'iframe') {
       const iframeContainer = document.createElement('div');
@@ -289,7 +197,6 @@ function createMediaElements() {
       iframe.allow = 'autoplay; fullscreen; encrypted-media';
       iframe.allowFullscreen = true;
       iframe.loading = 'lazy';
-      iframe.setAttribute('autoplay', 'true');
       
       iframeContainer.appendChild(iframe);
       box.appendChild(iframeContainer);
@@ -299,7 +206,14 @@ function createMediaElements() {
   });
 }
 
+let vuAnimationId = null;
+
 function startVU(audioEl, leftMeter, rightMeter) {
+  // Para qualquer animação anterior
+  if (vuAnimationId) {
+    cancelAnimationFrame(vuAnimationId);
+  }
+  
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) {
@@ -308,88 +222,129 @@ function startVU(audioEl, leftMeter, rightMeter) {
     }
 
     const audioCtx = new AudioContext();
+    
+    // Verifica se o áudio já está conectado a um contexto
+    if (audioEl.crossOrigin === null) {
+      audioEl.crossOrigin = "anonymous";
+    }
+    
     const source = audioCtx.createMediaElementSource(audioEl);
-    const splitter = audioCtx.createChannelSplitter(2);
     const analyserL = audioCtx.createAnalyser();
     const analyserR = audioCtx.createAnalyser();
+    
     analyserL.fftSize = 256;
     analyserR.fftSize = 256;
+    analyserL.smoothingTimeConstant = 0.8;
+    analyserR.smoothingTimeConstant = 0.8;
+    
     const dataL = new Uint8Array(analyserL.frequencyBinCount);
     const dataR = new Uint8Array(analyserR.frequencyBinCount);
 
-    source.connect(splitter);
-    splitter.connect(analyserL, 0);
-    splitter.connect(analyserR, 1);
+    // Conecta os analisadores
+    source.connect(analyserL);
+    source.connect(analyserR);
     analyserL.connect(audioCtx.destination);
     analyserR.connect(audioCtx.destination);
 
     function update() {
-      if (audioEl.paused || audioEl.ended) return;
+      if (audioEl.paused || audioEl.ended) {
+        stopVU(leftMeter, rightMeter);
+        return;
+      }
       
       analyserL.getByteFrequencyData(dataL);
       analyserR.getByteFrequencyData(dataR);
-      const rmsL = Math.sqrt(dataL.reduce((s,v)=>s+v*v,0)/dataL.length);
-      const rmsR = Math.sqrt(dataR.reduce((s,v)=>s+v*v,0)/dataR.length);
-      let dBL = rmsL>0?20*Math.log10(rmsL/255):-100;
-      let dBR = rmsR>0?20*Math.log10(rmsR/255):-100;
-      dBL = Math.max(-35, Math.min(5, dBL));
-      dBR = Math.max(-35, Math.min(5, dBR));
-      const levelL = dBL>=0?Math.floor((dBL/5)*6)+14:Math.floor((dBL+35)/35*14);
-      const levelR = dBR>=0?Math.floor((dBR/5)*6)+14:Math.floor((dBR+35)/35*14);
+      
+      // Calcula RMS (Root Mean Square) para cada canal
+      const rmsL = Math.sqrt(dataL.reduce((sum, value) => sum + value * value, 0) / dataL.length);
+      const rmsR = Math.sqrt(dataR.reduce((sum, value) => sum + value * value, 0) / dataR.length);
+      
+      // Converte para dB
+      let dBL = 20 * Math.log10(rmsL / 255);
+      let dBR = 20 * Math.log10(rmsR / 255);
+      
+      // Limita os valores entre -60 e 0 dB
+      dBL = Math.max(-60, Math.min(0, dBL));
+      dBR = Math.max(-60, Math.min(0, dBR));
+      
+      // Converte para nível (0-20 segments)
+      const levelL = Math.floor(((dBL + 60) / 60) * SEGMENTS);
+      const levelR = Math.floor(((dBR + 60) / 60) * SEGMENTS);
+      
       setSegments(leftMeter, levelL);
       setSegments(rightMeter, levelR);
-      requestAnimationFrame(update);
+      
+      vuAnimationId = requestAnimationFrame(update);
     }
+    
     update();
+    
   } catch (error) {
     console.warn('Erro ao iniciar VU:', error);
+    // Fallback: animação simulada se o Web Audio API falhar
+    simulateVU(leftMeter, rightMeter);
   }
 }
 
+function stopVU(leftMeter, rightMeter) {
+  if (vuAnimationId) {
+    cancelAnimationFrame(vuAnimationId);
+    vuAnimationId = null;
+  }
+  setSegments(leftMeter, 0);
+  setSegments(rightMeter, 0);
+}
+
+function simulateVU(leftMeter, rightMeter) {
+  let level = 0;
+  let direction = 1;
+  
+  function animate() {
+    if (vuAnimationId) {
+      cancelAnimationFrame(vuAnimationId);
+    }
+    
+    level += direction;
+    if (level >= 15 || level <= 0) {
+      direction *= -1;
+    }
+    
+    setSegments(leftMeter, level);
+    setSegments(rightMeter, level - 2); // Diferença entre os canais
+    
+    vuAnimationId = requestAnimationFrame(animate);
+  }
+  
+  animate();
+}
+
 function setSegments(meter, level) {
-  Array.from(meter.children).forEach((seg,i)=>{
-    seg.className = 'vu-segment';
-    if (i < level) {
-      seg.classList.add('on');
-      if (i < 10) seg.classList.add('green');
-      else if (i < 16) seg.classList.add('yellow');
-      else seg.classList.add('red');
+  Array.from(meter.children).forEach((segment, index) => {
+    segment.className = 'vu-segment';
+    
+    if (index < level) {
+      segment.classList.add('on');
+      
+      // Define cores baseadas no nível
+      if (index < 10) {
+        segment.classList.add('green');
+      } else if (index < 16) {
+        segment.classList.add('yellow');
+      } else {
+        segment.classList.add('red');
+      }
     }
   });
 }
 
 function setupAutoRefresh() {
-  setTimeout(()=>location.reload(), REFRESH_TIME);
-}
-
-function setupUserInteraction() {
-  const handleUserInteraction = () => {
-    if (!userInteracted) {
-      userInteracted = true;
-      console.log('Usuário interagiu - autoplay liberado');
-      
-      // Tenta iniciar autoplay para todas as rádios configuradas
-      document.querySelectorAll('audio').forEach(audio => {
-        if (audio.paused && audio.src) {
-          audio.play().catch(e => console.log('Autoplay ainda bloqueado para:', audio.src));
-        }
-      });
-      
-      // Remove os event listeners após a primeira interação
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-    }
-  };
-
-  document.addEventListener('click', handleUserInteraction);
-  document.addEventListener('touchstart', handleUserInteraction);
-  document.addEventListener('keydown', handleUserInteraction);
+  setInterval(() => {
+    console.log('Recarregando página para manter streams...');
+    location.reload();
+  }, REFRESH_TIME);
 }
 
 document.addEventListener('DOMContentLoaded', () => { 
   createMediaElements(); 
-  setupAutoRefresh(); 
-  setupUserInteraction();
-  setTimeout(() => document.body.classList.add('loaded'), 100); 
+  setupAutoRefresh();
 });
