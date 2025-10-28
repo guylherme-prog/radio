@@ -98,7 +98,7 @@ async function testStreamUrl(stream) {
         // Para URLs diretas, tenta criar um elemento de áudio
         return await new Promise((resolve) => {
           const audioTest = new Audio();
-          audioTest.crossOrigin = "anonymous";
+          audioTest.crossOrigin = "";
           audioTest.preload = "none";
           
           audioTest.addEventListener('canplay', () => {
