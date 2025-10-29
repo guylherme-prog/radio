@@ -2,19 +2,19 @@ const mediaStreams = [
   // Radio Stations
   {
     name: "CBN Fortaleza",
-    url: "https://ice.fabricahost.com.br/cbnfortaleza",
+    url: "https://ice-br.fabricahost.com.br/play/clubefmfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio"
   },
   {
     name: "Clube FM Fortaleza",
-    url: "https://https://ice.fabricahost.com.br/clubefmfortaleza",
+    url: "https://ice-br.fabricahost.com.br/play/clubefmfortaleza",
     logo: "https://tudoradio.com/img/uploads/noticias/664762a4e9075.png",
     type: "audio"
   },
   {
     name: "CBN Cariri",
-    url: "https://ice.fabricahost.com.br/cbncariri",
+    url: "https://ice-br.fabricahost.com.br/play/cbncariri",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio"
   },
