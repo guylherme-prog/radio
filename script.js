@@ -2,7 +2,7 @@ const mediaStreams = [
   // Radio Stations
   {
     name: "CBN Fortaleza",
-    url: "https://ice-br.fabricahost.com.br/play/clubefmfortaleza",
+    url: "https://ice-br.fabricahost.com.br/play/cbnfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio"
   },
