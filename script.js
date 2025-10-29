@@ -64,7 +64,7 @@ mediaStreams.forEach(stream => {
   if (stream.type === "audio") {
     const audio = document.createElement('audio');
     audio.src = stream.url;
-    audio.crossOrigin = "anonymous";
+    audio.crossOrigin = "";
     audio.controls = true;
     audio.loop = true;
 
