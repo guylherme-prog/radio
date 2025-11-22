@@ -2,7 +2,7 @@ const mediaStreams = [
   // Radio Stations
   {
     name: "CBN Fortaleza",
-    url: "https://ice-br.fabricahost.com.br/play/cbnfortaleza",
+    url: "https://ice-br.fabricahost.com.br/play/clubefmfortaleza",
     logo: "https://www.opovo.com.br/reboot/includes/assets/img/menu/icon-cbn.webp",
     type: "audio"
   },
@@ -33,7 +33,7 @@ const mediaStreams = [
   },
   {
     name: "Canal FDR",
-    embedUrl: ""https://v-us-01.wisestream.io/e4ade538-7924-4359-81ef-b9d4dd229e91.html",
+    embedUrl: "https://v-us-01.wisestream.io/e4ade538-7924-4359-81ef-b9d4dd229e91.html",
     fallbackUrl: "https://www.fdr.com.br/aovivo",
     type: "iframe"
   }
@@ -64,7 +64,7 @@ mediaStreams.forEach(stream => {
   if (stream.type === "audio") {
     const audio = document.createElement('audio');
     audio.src = stream.url;
-    audio.crossOrigin = "";
+    audio.crossOrigin = "anonymous";
     audio.controls = true;
     audio.loop = true;
 
