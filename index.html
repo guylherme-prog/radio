@@ -1,33 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitor de Rádios e TVs</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor de Áudio - VU Horizontal</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Monitor de Rádios e TVs Online</h1>
-      <p class="subtitle">Transmissões ao vivo</p>
+      <h1>Monitor de Áudio</h1>
+      <p class="subtitle">VU horizontal com streams de rádio e TV</p>
     </header>
-
-    <div class="media-grid" id="mediaContainer"></div>
-
-    <footer>
-      <p>Desenvolvido por Guylherme Bezerra • Atualizado em <span id="current-time"></span></p>
-    </footer>
+    <div id="mediaContainer" class="media-grid"></div>
   </div>
-
   <script src="script.js"></script>
-  <script>
-    function updateTime() {
-      const now = new Date();
-      document.getElementById('current-time').textContent = now.toLocaleString('pt-BR');
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
-  </script>
 </body>
 </html>
