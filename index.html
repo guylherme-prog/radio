@@ -2,18 +2,565 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitor de Áudio - VU Horizontal</title>
-<link rel="stylesheet" href="style.css">
+<title>VU Arco LED Segmentado com Display dBFS</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    background:#0c141c;
+    font-family:Arial, sans-serif;
+    color:#e6edf3;
+    padding:20px;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+    gap:25px;
+}
+.card{
+    background:#111c26;
+    padding:18px;
+    border-radius:18px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+}
+video,audio{
+    width:100%;
+    border-radius:10px;
+    background:#000;
+}
+canvas{
+    width:100%;
+    height:230px;
+}
+.peak-led{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#330000;
+    margin-top:8px;
+}
+.peak-led.on{
+    background:#ff0000;
+    box-shadow:0 0 15px #ff0000;
+}
+.info-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:15px;
+}
+.box{
+    background:#162430;
+    padding:8px;
+    border-radius:8px;
+    font-size:12px;
+}
+.box strong{
+    display:block;
+    font-size:14px;
+}
+
+/* Display dBFS */
+.dbfs-display {
+    background: #0a141f;
+    border: 2px solid #2a3a4a;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin: 10px 0;
+    display: inline-block;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.dbfs-value {
+    font-size: 28px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: #ffaa00;
+    text-shadow: 0 0 10px #ffaa00;
+}
+
+.dbfs-label {
+    font-size: 12px;
+    color: #8a9bb0;
+    margin-left: 5px;
+}
+
+.dbfs-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #5a6b80;
+    margin-top: 5px;
+}
+
+/* Badge para tipo de stream */
+.stream-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.badge-tv {
+    background: #4a6a8a;
+    color: white;
+}
+
+.badge-radio {
+    background: #8a6a4a;
+    color: white;
+}
+
+/* Header com logo */
+.stream-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    background: #0a141f;
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.stream-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    background: #1e2a36;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.stream-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.stream-title {
+    flex: 1;
+}
+
+.stream-title h3 {
+    margin: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stream-url {
+    font-size: 10px;
+    color: #8a9bb0;
+    margin-top: 4px;
+    word-break: break-all;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Monitor de Áudio</h1>
-      <p class="subtitle">VU horizontal com streams de rádio e TV</p>
-    </header>
-    <div id="mediaContainer" class="media-grid"></div>
-  </div>
-  <script src="script.js"></script>
+
+<h2>Painel Broadcast - VU Curvo LED com Display dBFS</h2>
+<div class="grid" id="grid"></div>
+
+<script>
+// COLE AQUI AS URLs DAS LOGOS QUE VOCÊ ENCONTROU
+const streams = [
+    // TV O POVO - Substitua a URL abaixo pela logo oficial
+    { 
+        name: "TV O Povo", 
+        url: "https://v-us-01.wisestream.io/memfs/e8740862-7a1f-45f3-acb2-4f357e144059.m3u8", 
+        type: "tv",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/c/c6/TV_O_Povo.png", // URL atualizada
+        logoFallback: "📺"
+    },
+    
+    // TV FDR - Como não localizou, mantive emoji
+    { 
+        name: "TV FDR", 
+        url: "https://v-us-01.wisestream.io/memfs/e4ade538-7924-4359-81ef-b9d4dd229e91.m3u8", 
+        type: "tv",
+        logo: "", // Deixe vazio para usar o emoji
+        logoFallback: "📡"
+    },
+    
+    // CBN Cariri - Use a logo do Grupo O Povo
+    { 
+        name: "CBN Cariri", 
+        url: "https://ice-br.fabricahost.com.br/play/cbncariri", 
+        type: "radio",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/0/06/CBN_%28Brasil%29_logo.png", // Logo CBN Brasil
+        logoFallback: "🔊"
+    },
+    
+    // CBN Fortaleza - Use a logo do Grupo O Povo
+    { 
+        name: "CBN Fortaleza", 
+        url: "https://ice-br.fabricahost.com.br/play/cbnfortaleza", 
+        type: "radio",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/0/06/CBN_%28Brasil%29_logo.png", // Logo CBN Brasil
+        logoFallback: "🎙️"
+    },
+    
+    // Nova Brasil - Use a logo do site oficial
+    { 
+        name: "Nova Brasil", 
+        url: "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_FORAAC.aac", 
+        type: "radio",
+        logo: "https://novabrasilfm.com.br/wp-content/themes/novabrasil/assets/images/logo-nova-brasil-fm.png", // Logo oficial
+        logoFallback: "🎵"
+    },
+    
+    // Rádio Maria FM
+    { 
+        name: "Rádio Maria FM", 
+        url: "https://dreamsiteradiocp6.com/proxy/rmbrasile?mp=/stream", 
+        type: "radio",
+        logo: "https://www.radiomaria.org.br/wp-content/uploads/2019/05/logo-radiomaria.png", // Logo oficial
+        logoFallback: "🙏"
+    }
+];
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+document.body.addEventListener("click", () => audioCtx.resume());
+
+streams.forEach(createCard);
+
+function createCard(stream) {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const badgeClass = stream.type === "tv" ? "badge-tv" : "badge-radio";
+    const badgeText = stream.type === "tv" ? "📺 TV" : "📻 RÁDIO";
+
+    // Prepara o conteúdo da logo
+    let logoContent = '';
+    if (stream.logo) {
+        logoContent = `<img src="${stream.logo}" alt="${stream.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='${stream.logoFallback}'; this.parentElement.style.fontSize='24px';">`;
+    } else {
+        logoContent = `<span style="font-size: 24px;">${stream.logoFallback}</span>`;
+    }
+
+    card.innerHTML = `
+    <div class="stream-header">
+        <div class="stream-logo">
+            ${logoContent}
+        </div>
+        <div class="stream-title">
+            <h3>${stream.name} <span class="stream-badge ${badgeClass}">${badgeText}</span></h3>
+            <div class="stream-url">${stream.url.substring(0, 50)}${stream.url.length > 50 ? '...' : ''}</div>
+        </div>
+    </div>
+    ${stream.type === "tv" ? "<video controls crossorigin='anonymous'></video>" : "<audio controls crossorigin='anonymous'></audio>"}
+    <div class="dbfs-display">
+        <span class="dbfs-value" id="dbfs-value-${stream.name.replace(/\s/g, '')}">-60.0</span>
+        <span class="dbfs-label">dBFS</span>
+        <div class="dbfs-scale">
+            <span>-60</span>
+            <span>-40</span>
+            <span>-20</span>
+            <span>0</span>
+        </div>
+    </div>
+    <canvas></canvas>
+    <div class="peak-led"></div>
+    <div class="info-grid"></div>
+    `;
+
+    const media = card.querySelector("video") || card.querySelector("audio");
+    const canvas = card.querySelector("canvas");
+    const ctx = canvas.getContext("2d");
+    const peakLed = card.querySelector(".peak-led");
+    const infoGrid = card.querySelector(".info-grid");
+    const dbfsElement = card.querySelector(`#dbfs-value-${stream.name.replace(/\s/g, '')}`);
+
+    canvas.width = 360;
+    canvas.height = 230;
+
+    let codec = "-";
+    let bitrate = "-";
+    let streamFormat = "-";
+    let containerFormat = stream.url.endsWith(".m3u8") ? "HLS" : (stream.url.includes(".aac") ? "AAC" : "MP3");
+
+    // Detectar codec de áudio e formato
+    if (stream.url.endsWith(".m3u8")) {
+        const hls = new Hls();
+        hls.loadSource(stream.url);
+        hls.attachMedia(media);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+            if (data.levels && data.levels.length > 0) {
+                const audioLevel = data.levels[0];
+                codec = audioLevel.audioCodec || "AAC";
+
+                if (codec.includes("mp4a.40.2")) codec = "AAC-LC";
+                else if (codec.includes("mp4a.40.5")) codec = "AAC-HE";
+                else if (codec.includes("mp3")) codec = "MP3";
+
+                streamFormat = audioLevel.videoCodec ? "A+V" : "Áudio apenas";
+            }
+        });
+
+        hls.on(Hls.Events.FRAG_LOADED, (e, data) => {
+            if (data.frag.stats) {
+                const bitsLoaded = data.frag.stats.loaded * 8;
+                const duration = data.frag.duration;
+                bitrate = Math.round(bitsLoaded / 1000 / duration) + " kbps";
+            }
+        });
+    } else {
+        media.src = stream.url;
+        if (stream.url.includes(".aac")) codec = "AAC-LC";
+        else if (stream.url.includes(".mp3")) codec = "MP3";
+        else if (stream.url.includes("dreamsiteradiocp")) codec = "MP3/AAC";
+        else codec = "Áudio stream";
+        
+        // Para streams de rádio, estimar bitrate
+        if (stream.type === "radio") {
+            if (stream.url.includes("cbn")) bitrate = "64 kbps";
+            else if (stream.url.includes("novabrasil")) bitrate = "128 kbps";
+            else if (stream.url.includes("maria")) bitrate = "128 kbps";
+            else bitrate = "VBR";
+        }
+    }
+
+    // Criar analisador estéreo
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    const source = audioCtx.createMediaElementSource(media);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    // Analisador para detecção estéreo
+    const splitter = audioCtx.createChannelSplitter(2);
+    const merger = audioCtx.createChannelMerger(2);
+    source.connect(splitter);
+    splitter.connect(merger, 0, 0);
+    splitter.connect(merger, 1, 1);
+
+    const analyserL = audioCtx.createAnalyser();
+    const analyserR = audioCtx.createAnalyser();
+    analyserL.fftSize = 256;
+    analyserR.fftSize = 256;
+
+    splitter.connect(analyserL, 0);
+    splitter.connect(analyserR, 1);
+
+    const bufferL = new Uint8Array(analyserL.frequencyBinCount);
+    const bufferR = new Uint8Array(analyserR.frequencyBinCount);
+
+    const buffer = new Uint8Array(analyser.fftSize);
+
+    let vuValue = -60;
+    let peakHold = -60;
+
+    function draw() {
+        requestAnimationFrame(draw);
+
+        analyser.getByteTimeDomainData(buffer);
+
+        let sum = 0;
+        let peak = 0;
+
+        for (let i = 0; i < buffer.length; i++) {
+            let v = (buffer[i] - 128) / 128;
+            sum += v * v;
+            peak = Math.max(peak, Math.abs(v));
+        }
+
+        let rms = Math.sqrt(sum / buffer.length);
+        let db = 20 * Math.log10(rms || 0.00001);
+        db = Math.max(-60, Math.min(0, db));
+
+        /* Ballística VU */
+        vuValue += (db - vuValue) * 0.15;
+
+        /* Peak Hold */
+        let peakDb = 20 * Math.log10(peak || 0.00001);
+        peakDb = Math.max(-60, Math.min(0, peakDb));
+
+        if (peakDb > peakHold) {
+            peakHold = peakDb;
+        } else {
+            peakHold -= 0.5;
+        }
+
+        if (peak > 0.98) peakLed.classList.add("on");
+        else peakLed.classList.remove("on");
+
+        // Atualiza o display dBFS
+        dbfsElement.textContent = vuValue.toFixed(1);
+        
+        if (vuValue > -6) {
+            dbfsElement.style.color = '#ff5555';
+            dbfsElement.style.textShadow = '0 0 15px #ff0000';
+        } else if (vuValue > -18) {
+            dbfsElement.style.color = '#ffaa00';
+            dbfsElement.style.textShadow = '0 0 10px #ffaa00';
+        } else if (vuValue > -40) {
+            dbfsElement.style.color = '#ffff00';
+            dbfsElement.style.textShadow = '0 0 8px #ffff00';
+        } else {
+            dbfsElement.style.color = '#33ff33';
+            dbfsElement.style.textShadow = '0 0 5px #33ff33';
+        }
+
+        // Detectar mono/estéreo
+        analyserL.getByteFrequencyData(bufferL);
+        analyserR.getByteFrequencyData(bufferR);
+
+        let sumL = 0, sumR = 0;
+        for (let i = 0; i < bufferL.length; i++) {
+            sumL += bufferL[i];
+            sumR += bufferR[i];
+        }
+
+        let avgL = sumL / bufferL.length;
+        let avgR = sumR / bufferR.length;
+        let diff = Math.abs(avgL - avgR) / ((avgL + avgR) / 2);
+
+        let channelInfo = (diff < 0.1 || avgL < 5 || avgR < 5) ? "Mono" : "Estéreo";
+        let channelIcon = channelInfo === "Estéreo" ? "🎧" : "🔊";
+
+        /* Desenho do VU meter */
+        ctx.clearRect(0, 0, 360, 230);
+
+        const cx = 180;
+        const cy = 190;
+        const radius = 140;
+
+        // Configuração dos LEDs
+        const numLeds = 32;
+        const ledWidth = 16;
+        const spacing = 2;
+        const totalArc = Math.PI;
+
+        // Desenha os LEDs em arco
+        for (let i = 0; i < numLeds; i++) {
+            let segDb = -60 + (i / numLeds) * 60;
+            let startAngle = Math.PI + (i / numLeds) * totalArc;
+            let endAngle = Math.PI + ((i + 1) / numLeds) * totalArc - (spacing / radius);
+
+            let ledColor;
+            if (segDb > -6) ledColor = "#ff3333";
+            else if (segDb > -18) ledColor = "#ffaa00";
+            else if (segDb > -40) ledColor = "#ffff00";
+            else ledColor = "#33ff33";
+
+            let isActive = vuValue >= segDb;
+
+            ctx.beginPath();
+            ctx.lineWidth = ledWidth;
+            ctx.strokeStyle = isActive ? ledColor : "#1a2530";
+
+            if (isActive) {
+                ctx.shadowColor = ledColor;
+                ctx.shadowBlur = 8;
+            } else {
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Desenha o ponteiro central
+        let pointerAngle = Math.PI + ((vuValue + 60) / 60) * totalArc;
+
+        // Círculo central
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20, 0, 2 * Math.PI);
+        ctx.fillStyle = "#334455";
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Agulha (ponteiro)
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        let pointerX = cx + (radius - 30) * Math.cos(pointerAngle);
+        let pointerY = cy + (radius - 30) * Math.sin(pointerAngle);
+        ctx.lineTo(pointerX, pointerY);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+
+        // Parafuso central
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = "#aaaaaa";
+        ctx.fill();
+        ctx.strokeStyle = "#666666";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+
+        // Peak Hold
+        let peakAngle = Math.PI + ((peakHold + 60) / 60) * totalArc;
+        ctx.beginPath();
+        ctx.arc(cx + (radius - 15) * Math.cos(peakAngle),
+            cy + (radius - 15) * Math.sin(peakAngle),
+            5, 0, 2 * Math.PI);
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        /* Escala dB */
+        ctx.fillStyle = "#9fb3c8";
+        ctx.font = "11px Arial";
+        for (let i = -60; i <= 0; i += 10) {
+            let angle = Math.PI + ((i + 60) / 60) * Math.PI;
+            let x = cx + (radius - 55) * Math.cos(angle);
+            let y = cy + (radius - 55) * Math.sin(angle);
+            ctx.fillText(i, x - 10, y + 4);
+        }
+
+        /* Infos técnicas */
+        const bufferSize = media.buffered.length ?
+            (media.buffered.end(0) - media.currentTime).toFixed(2) + " s" : "-";
+
+        // Informações específicas por tipo
+        let typeSpecificInfo = "";
+        if (stream.type === "tv") {
+            typeSpecificInfo = `
+            <div class="box"><span>Formato</span><strong>${streamFormat}</strong></div>
+            <div class="box"><span>Container</span><strong>${containerFormat}</strong></div>
+            `;
+        } else {
+            typeSpecificInfo = `
+            <div class="box"><span>Bitrate</span><strong>${bitrate || 'VBR'}</strong></div>
+            <div class="box"><span>Formato</span><strong>${codec}</strong></div>
+            `;
+        }
+
+        infoGrid.innerHTML = `
+        <div class="box"><span>Codec</span><strong>${codec}</strong></div>
+        <div class="box"><span>Canais</span><strong>${channelIcon} ${channelInfo}</strong></div>
+        <div class="box"><span>Sample Rate</span><strong>${audioCtx.sampleRate} Hz</strong></div>
+        <div class="box"><span>Bitrate</span><strong>${bitrate || '--'}</strong></div>
+        ${typeSpecificInfo}
+        <div class="box"><span>Buffer</span><strong>${bufferSize}</strong></div>
+        <div class="box"><span>Peak</span><strong>${peakDb.toFixed(1)} dBFS</strong></div>
+        `;
+    }
+
+    draw();
+    document.getElementById("grid").appendChild(card);
+}
+
+</script>
 </body>
 </html>
