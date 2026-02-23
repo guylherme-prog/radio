@@ -49,118 +49,430 @@ const streams=[
 {name:"Nova Brasil",url:"https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_FORAAC.aac",type:"radio",icon:"🎵"},
 {name:"Rádio Maria FM",url:"https://dreamsiteradiocp6.com/proxy/rmbrasile?mp=/stream",type:"radio",icon:"🙏"}
 ];
-let audioCtx=null;
-function initAudioContext(){if(!audioCtx){audioCtx=new(window.AudioContext||window.webkitAudioContext)();}return audioCtx;}
-streams.forEach(createCard);
-function createCard(s){
- const c=document.createElement("div");c.className="card";
- const badgeClass=s.type=="tv"?"badge-tv":"badge-radio",badgeText=s.type=="tv"?"📺 TV":"📻 RÁDIO";
- c.innerHTML=`
- <div class="stream-header"><div class="stream-icon">${s.icon}</div><div class="stream-title"><h3>${s.name} <span class="stream-badge ${badgeClass}">${badgeText}</span></h3><small>${s.url.split('/')[2]}</small></div><div class="status-indicator paused" id="status-${s.name.replace(/\s/g,'')}"></div></div>
- ${s.type=="tv"?"<video controls crossorigin='anonymous' preload='none'></video>":"<audio controls crossorigin='anonymous' preload='none'></audio>"}
- <div class="control-bar"><button class="control-btn" onclick="initAudioContext()">🔊 Iniciar Áudio</button></div>
- <div class="dbfs-display"><span class="dbfs-value" id="dbfs-${s.name.replace(/\s/g,'')}">-60.0</span><span class="dbfs-label">dBFS</span><div class="dbfs-scale"><span>-60</span><span>-40</span><span>-20</span><span>0</span></div></div>
- <canvas></canvas><div class="peak-led"></div><div class="info-grid"></div>`;
- const m=c.querySelector("video")||c.querySelector("audio");
- const cv=c.querySelector("canvas"),ctx=cv.getContext("2d");
- const pl=c.querySelector(".peak-led"),ig=c.querySelector(".info-grid");
- const dbfs=document.getElementById(`dbfs-${s.name.replace(/\s/g,'')}`);
- const sts=document.getElementById(`status-${s.name.replace(/\s/g,'')}`);
- cv.width=360;cv.height=230;
- let codec="-",bitrate="-",fmt="-",cont=s.url.endsWith(".m3u8")?"HLS":"Direto";
- let src=null,an=null,anL=null,anR=null,audioOk=false;
- if(s.url.endsWith(".m3u8")){
-  if(Hls.isSupported()){
-   const hls=new Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:90});
-   hls.loadSource(s.url);hls.attachMedia(m);
-   hls.on(Hls.Events.MANIFEST_PARSED,(e,d)=>{if(d.levels&&d.levels[0]){let l=d.levels[0];codec=l.audioCodec||"AAC";if(codec.includes("mp4a.40.2"))codec="AAC-LC";else if(codec.includes("mp4a.40.5"))codec="AAC-HE";fmt=l.videoCodec?"A+V":"Áudio";}sts.className="status-indicator";});
-   hls.on(Hls.Events.FRAG_LOADED,(e,d)=>{if(d.frag.stats){let bits=d.frag.stats.loaded*8;let dur=d.frag.duration;bitrate=Math.round(bits/1000/dur)+" kbps";}});
-   hls.on(Hls.Events.ERROR,(e,d)=>{console.error("HLS Error",d);sts.className="status-indicator error";});
-  }else if(m.canPlayType("application/vnd.apple.mpegurl")){m.src=s.url;}
- }else{
-  m.src=s.url;
-  if(s.url.includes(".aac"))codec="AAC-LC";
-  else if(s.url.includes(".mp3"))codec="MP3";
-  else if(s.url.includes("dreamsiteradiocp"))codec="MP3";
-  else codec="Áudio stream";
-  if(s.url.includes("cbn"))bitrate="64 kbps";
-  else if(s.url.includes("novabrasil"))bitrate="128 kbps";
-  else if(s.url.includes("maria"))bitrate="128 kbps";
- }
- function setup(){
-  if(audioOk||!audioCtx||audioCtx.state!="running")return;
-  try{if(!src){
-   src=audioCtx.createMediaElementSource(m);
-   an=audioCtx.createAnalyser();an.fftSize=2048;
-   let sp=audioCtx.createChannelSplitter(2);
-   anL=audioCtx.createAnalyser();anR=audioCtx.createAnalyser();
-   anL.fftSize=256;anR.fftSize=256;
-   src.connect(an);src.connect(sp);sp.connect(anL,0);sp.connect(anR,1);
-   an.connect(audioCtx.destination);
-   audioOk=true;sts.className="status-indicator";
-   console.log("Áudio OK",s.name);
-  }}catch(e){console.error("Erro",e);sts.className="status-indicator error";}
- }
- m.addEventListener("play",()=>{if(!audioCtx)initAudioContext();if(audioCtx&&audioCtx.state=="running")setup();});
- const buf=new Uint8Array(2048),bufL=new Uint8Array(128),bufR=new Uint8Array(128);
- let vu=-60,peak=-60;
- function draw(){
-  requestAnimationFrame(draw);
-  if(audioCtx){
-   if(audioCtx.state=="running"&&m.paused)sts.className="status-indicator paused";
-   else if(audioCtx.state=="running"&&!m.paused)sts.className="status-indicator";
-   else if(audioCtx.state=="suspended")sts.className="status-indicator paused";
+
+let audioCtx = null;
+
+function initAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass();
   }
-  if(an&&audioCtx&&audioCtx.state=="running"&&!m.paused){
-   try{
-    an.getByteTimeDomainData(buf);
-    let sum=0,pk=0;for(let i=0;i<buf.length;i++){let v=(buf[i]-128)/128;sum+=v*v;pk=Math.max(pk,Math.abs(v));}
-    let rms=Math.sqrt(sum/buf.length);let db=20*Math.log10(rms||1e-5);db=Math.max(-60,Math.min(0,db));
-    vu+=(db-vu)*0.15;
-    let peakDb=20*Math.log10(pk||1e-5);peakDb=Math.max(-60,Math.min(0,peakDb));
-    if(peakDb>peak)peak=peakDb;else peak-=0.5;
-    if(pk>0.98)pl.classList.add("on");else pl.classList.remove("on");
-    dbfs.textContent=vu.toFixed(1);
-    if(vu>-6){dbfs.style.color="#ff5555";dbfs.style.textShadow="0 0 15px #f00";}
-    else if(vu>-18){dbfs.style.color="#ffaa00";dbfs.style.textShadow="0 0 10px #ffaa00";}
-    else if(vu>-40){dbfs.style.color="#ffff00";dbfs.style.textShadow="0 0 8px #ffff00";}
-    else {dbfs.style.color="#33ff33";dbfs.style.textShadow="0 0 5px #33ff33";}
-    let ch="Mono",chIcon="🔊";
-    if(anL&&anR){
-     anL.getByteFrequencyData(bufL);anR.getByteFrequencyData(bufR);
-     let sumL=0,sumR=0;for(let i=0;i<bufL.length;i++){sumL+=bufL[i];sumR+=bufR[i];}
-     let avgL=sumL/bufL.length,avgR=sumR/bufR.length;
-     if(avgL>5&&avgR>5){let diff=Math.abs(avgL-avgR)/((avgL+avgR)/2);ch=diff<0.2?"Estéreo":"Mono";chIcon=ch=="Estéreo"?"🎧":"🔊";}
-    }
-    drawVU(vu,peak);
-    let bufSize=m.buffered.length?(m.buffered.end(0)-m.currentTime).toFixed(1)+"s":"-";
-    let extra=s.type=="tv"?`<div class="box"><span>Formato</span><strong>${fmt}</strong></div><div class="box"><span>Container</span><strong>${cont}</strong></div>`:`<div class="box"><span>Bitrate</span><strong>${bitrate||"VBR"}</strong></div><div class="box"><span>Qualidade</span><strong>${codec}</strong></div>`;
-    ig.innerHTML=`<div class="box"><span>Codec</span><strong>${codec}</strong></div><div class="box"><span>Canais</span><strong>${chIcon} ${ch}</strong></div><div class="box"><span>Sample Rate</span><strong>${audioCtx.sampleRate} Hz</strong></div><div class="box"><span>Bitrate</span><strong>${bitrate||"--"}</strong></div>${extra}<div class="box"><span>Buffer</span><strong>${bufSize}</strong></div><div class="box"><span>Peak</span><strong>${peak.toFixed(1)} dBFS</strong></div>`;
-   }catch(e){console.error("draw",e);drawStatic();}
-  }else{drawStatic();ig.innerHTML=`<div class="box"><span>Codec</span><strong>${codec}</strong></div><div class="box"><span>Canais</span><strong>🔊 --</strong></div><div class="box"><span>Sample Rate</span><strong>${audioCtx?audioCtx.sampleRate+" Hz":"--"}</strong></div><div class="box"><span>Bitrate</span><strong>${bitrate||"--"}</strong></div><div class="box"><span>Formato</span><strong>${fmt}</strong></div><div class="box"><span>Container</span><strong>${cont}</strong></div><div class="box"><span>Buffer</span><strong>--</strong></div><div class="box"><span>Peak</span><strong>-60.0 dBFS</strong></div>`;}
- }
- function drawVU(v,p){
-  ctx.clearRect(0,0,360,230);const cx=180,cy=190,r=140,n=32,w=16,sp=2,arc=Math.PI;
-  for(let i=0;i<n;i++){
-   let seg=-60+(i/n)*60,st=Math.PI+(i/n)*arc,en=Math.PI+((i+1)/n)*arc-(sp/r);
-   let col;if(seg>-6)col="#f33";else if(seg>-18)col="#fa0";else if(seg>-40)col="#ff0";else col="#3f3";
-   let act=v>=seg;ctx.beginPath();ctx.lineWidth=w;ctx.strokeStyle=act?col:"#1a2530";
-   if(act){ctx.shadowColor=col;ctx.shadowBlur=8;}
-   ctx.arc(cx,cy,r,st,en);ctx.stroke();ctx.shadowBlur=0;
-  }
-  let ang=Math.PI+((v+60)/60)*arc;
-  ctx.beginPath();ctx.arc(cx,cy,20,0,7);ctx.fillStyle="#345";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+(r-30)*Math.cos(ang),cy+(r-30)*Math.sin(ang));ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.shadowColor="#fff";ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;
-  ctx.beginPath();ctx.arc(cx,cy,6,0,7);ctx.fillStyle="#aaa";ctx.fill();ctx.strokeStyle="#666";ctx.lineWidth=1;ctx.stroke();
-  if(p>-60){let pang=Math.PI+((p+60)/60)*arc;ctx.beginPath();ctx.arc(cx+(r-15)*Math.cos(pang),cy+(r-15)*Math.sin(pang),5,0,7);ctx.fillStyle="#fff";ctx.shadowColor="#fff";ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;}
-  ctx.fillStyle="#9fb3c8";ctx.font="11px Arial";
-  for(let i=-60;i<=0;i+=10){let a=Math.PI+((i+60)/60)*Math.PI;let x=cx+(r-55)*Math.cos(a);let y=cy+(r-55)*Math.sin(a);ctx.fillText(i,x-10,y+4);}
- }
- function drawStatic(){drawVU(-60,-60);}
- draw();
- document.getElementById("grid").appendChild(c);
+  return audioCtx.resume();
 }
-window.initAudioContext=function(){let c=new(window.AudioContext||window.webkitAudioContext);c.resume().then(()=>{audioCtx=c;console.log("AudioContext ok");document.querySelectorAll("audio,video").forEach(m=>{if(!m.paused)m.dispatchEvent(new Event("play"));});});};
-document.body.addEventListener("click",()=>{if(!audioCtx)initAudioContext();else if(audioCtx.state=="suspended")audioCtx.resume();},{once:true});
+
+// Função para configurar análise de áudio em um card específico
+function setupAudioForMedia(media, statusIndicator, streamName) {
+  if (!audioCtx || audioCtx.state !== 'running') return false;
+  // Procura o card que contém este media
+  const card = media.closest('.card');
+  if (!card) return false;
+  // Tenta obter as variáveis do card (elas foram definidas no escopo da função createCard)
+  // Como não temos acesso direto, vamos usar um mapa fraco ou armazenar nos atributos do card.
+  // Melhor: vamos armazenar a função de setup no próprio card.
+  // Vamos modificar a criação do card para guardar uma referência.
+  // Mas para simplificar, vamos recriar a lógica de setup baseada nos atributos do card.
+  // Isso é mais complexo. Vamos mudar a abordagem: ao criar o card, armazenamos as variáveis em um objeto no card.
+  // Como o código já está grande, farei uma versão simplificada: cada card terá um método setup.
+  // Precisamos reestruturar.
+  
+  // Por enquanto, vou deixar a lógica original e adicionar uma chamada global após o clique.
+  // A função original setupAudioAnalysis está dentro de createCard, e é chamada no evento play.
+  // Para ativar manualmente, podemos disparar o evento 'play' novamente.
+  // Isso não é ideal, mas pode funcionar.
+  
+  // Alternativa: armazenar a função setup no próprio elemento media.
+  // Vamos adicionar um atributo data-setup com a função? Não dá.
+  
+  // Melhor solução: refatorar createCard para expor uma função de setup.
+}
+
+// Vamos refatorar createCard para guardar a função setup no próprio card.
+// Para isso, vamos modificar a criação.
+
+const cards = []; // não usado
+
+function createCard(stream) {
+  const card = document.createElement("div");
+  card.className = "card";
+  
+  const badgeClass = stream.type === "tv" ? "badge-tv" : "badge-radio";
+  const badgeText = stream.type === "tv" ? "📺 TV" : "📻 RÁDIO";
+
+  card.innerHTML = `
+    <div class="stream-header">
+      <div class="stream-icon">${stream.icon}</div>
+      <div class="stream-title">
+        <h3>${stream.name} <span class="stream-badge ${badgeClass}">${badgeText}</span></h3>
+        <small>${stream.url.split('/')[2]}</small>
+      </div>
+      <div class="status-indicator paused" id="status-${stream.name.replace(/\s/g, '')}"></div>
+    </div>
+    ${stream.type === "tv" ? "<video controls crossorigin='anonymous' preload='none'></video>" : "<audio controls crossorigin='anonymous' preload='none'></audio>"}
+    <div class="control-bar">
+      <button class="control-btn" onclick="initAudioContext()">🔊 Iniciar Áudio</button>
+    </div>
+    <div class="dbfs-display">
+      <span class="dbfs-value" id="dbfs-${stream.name.replace(/\s/g, '')}">-60.0</span>
+      <span class="dbfs-label">dBFS</span>
+      <div class="dbfs-scale">
+        <span>-60</span>
+        <span>-40</span>
+        <span>-20</span>
+        <span>0</span>
+      </div>
+    </div>
+    <canvas></canvas>
+    <div class="peak-led"></div>
+    <div class="info-grid"></div>
+  `;
+
+  const media = card.querySelector("video") || card.querySelector("audio");
+  const canvas = card.querySelector("canvas");
+  const ctx = canvas.getContext("2d");
+  const peakLed = card.querySelector(".peak-led");
+  const infoGrid = card.querySelector(".info-grid");
+  const dbfsElement = document.getElementById(`dbfs-${stream.name.replace(/\s/g, '')}`);
+  const statusIndicator = document.getElementById(`status-${stream.name.replace(/\s/g, '')}`);
+
+  canvas.width = 360;
+  canvas.height = 230;
+
+  let codec = "-";
+  let bitrate = "-";
+  let streamFormat = "-";
+  let containerFormat = stream.url.endsWith(".m3u8") ? "HLS" : "Direto";
+  let source = null;
+  let analyser = null;
+  let analyserL = null;
+  let analyserR = null;
+  let audioSetupDone = false;
+
+  // Configura HLS
+  if (stream.url.endsWith(".m3u8")) {
+    if (Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 90 });
+      hls.loadSource(stream.url);
+      hls.attachMedia(media);
+      hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+        if (data.levels && data.levels[0]) {
+          const level = data.levels[0];
+          codec = level.audioCodec || "AAC";
+          if (codec.includes("mp4a.40.2")) codec = "AAC-LC";
+          else if (codec.includes("mp4a.40.5")) codec = "AAC-HE";
+          streamFormat = level.videoCodec ? "A+V" : "Áudio";
+        }
+        statusIndicator.className = "status-indicator";
+      });
+      hls.on(Hls.Events.FRAG_LOADED, (e, data) => {
+        if (data.frag.stats) {
+          const bitsLoaded = data.frag.stats.loaded * 8;
+          const duration = data.frag.duration;
+          bitrate = Math.round(bitsLoaded / 1000 / duration) + " kbps";
+        }
+      });
+      hls.on(Hls.Events.ERROR, (e, data) => {
+        console.error("HLS Error:", data);
+        statusIndicator.className = "status-indicator error";
+      });
+    } else if (media.canPlayType('application/vnd.apple.mpegurl')) {
+      media.src = stream.url;
+    }
+  } else {
+    media.src = stream.url;
+    if (stream.url.includes(".aac")) codec = "AAC-LC";
+    else if (stream.url.includes(".mp3")) codec = "MP3";
+    else if (stream.url.includes("dreamsiteradiocp")) codec = "MP3";
+    else codec = "Áudio stream";
+    if (stream.url.includes("cbn")) bitrate = "64 kbps";
+    else if (stream.url.includes("novabrasil")) bitrate = "128 kbps";
+    else if (stream.url.includes("maria")) bitrate = "128 kbps";
+  }
+
+  // Função de configuração de áudio
+  function setupAudioAnalysis() {
+    if (audioSetupDone || !audioCtx || audioCtx.state !== 'running') return false;
+    try {
+      if (!source) {
+        source = audioCtx.createMediaElementSource(media);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        const splitter = audioCtx.createChannelSplitter(2);
+        analyserL = audioCtx.createAnalyser();
+        analyserR = audioCtx.createAnalyser();
+        analyserL.fftSize = 256;
+        analyserR.fftSize = 256;
+        source.connect(analyser);
+        source.connect(splitter);
+        splitter.connect(analyserL, 0);
+        splitter.connect(analyserR, 1);
+        analyser.connect(audioCtx.destination);
+        audioSetupDone = true;
+        statusIndicator.className = "status-indicator";
+        console.log("Áudio configurado para:", stream.name);
+        return true;
+      }
+    } catch (e) {
+      console.error("Erro ao configurar áudio:", e);
+      statusIndicator.className = "status-indicator error";
+    }
+    return false;
+  }
+
+  // Tenta configurar quando o áudio começar
+  media.addEventListener('play', () => {
+    if (!audioCtx) {
+      initAudioContext().then(() => {
+        setupAudioAnalysis();
+      });
+    } else if (audioCtx.state === 'running') {
+      setupAudioAnalysis();
+    } else if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(() => {
+        setupAudioAnalysis();
+      });
+    }
+  });
+
+  // Função para ativar manualmente (chamada após o clique)
+  function activate() {
+    if (!media.paused) {
+      if (!audioCtx) {
+        initAudioContext().then(() => setupAudioAnalysis());
+      } else if (audioCtx.state === 'running') {
+        setupAudioAnalysis();
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => setupAudioAnalysis());
+      }
+    }
+  }
+
+  // Armazenar a função activate no próprio card para uso posterior
+  card.activateAudio = activate;
+
+  // Animação
+  const buffer = new Uint8Array(2048);
+  const bufferL = new Uint8Array(128);
+  const bufferR = new Uint8Array(128);
+  let vuValue = -60;
+  let peakHold = -60;
+
+  function draw() {
+    requestAnimationFrame(draw);
+
+    if (audioCtx) {
+      if (audioCtx.state === 'running' && media.paused) {
+        statusIndicator.className = "status-indicator paused";
+      } else if (audioCtx.state === 'running' && !media.paused) {
+        statusIndicator.className = "status-indicator";
+      } else if (audioCtx.state === 'suspended') {
+        statusIndicator.className = "status-indicator paused";
+      }
+    }
+
+    if (analyser && audioCtx && audioCtx.state === 'running' && !media.paused) {
+      try {
+        analyser.getByteTimeDomainData(buffer);
+
+        let sum = 0, peak = 0;
+        for (let i = 0; i < buffer.length; i++) {
+          let v = (buffer[i] - 128) / 128;
+          sum += v * v;
+          peak = Math.max(peak, Math.abs(v));
+        }
+
+        let rms = Math.sqrt(sum / buffer.length);
+        let db = 20 * Math.log10(rms || 1e-5);
+        db = Math.max(-60, Math.min(0, db));
+
+        vuValue += (db - vuValue) * 0.15;
+
+        let peakDb = 20 * Math.log10(peak || 1e-5);
+        peakDb = Math.max(-60, Math.min(0, peakDb));
+
+        if (peakDb > peakHold) peakHold = peakDb;
+        else peakHold -= 0.5;
+
+        if (peak > 0.98) peakLed.classList.add("on");
+        else peakLed.classList.remove("on");
+
+        dbfsElement.textContent = vuValue.toFixed(1);
+
+        if (vuValue > -6) {
+          dbfsElement.style.color = '#ff5555';
+          dbfsElement.style.textShadow = '0 0 15px #f00';
+        } else if (vuValue > -18) {
+          dbfsElement.style.color = '#ffaa00';
+          dbfsElement.style.textShadow = '0 0 10px #ffaa00';
+        } else if (vuValue > -40) {
+          dbfsElement.style.color = '#ffff00';
+          dbfsElement.style.textShadow = '0 0 8px #ffff00';
+        } else {
+          dbfsElement.style.color = '#33ff33';
+          dbfsElement.style.textShadow = '0 0 5px #33ff33';
+        }
+
+        // Detectar mono/estéreo
+        let channelInfo = "Mono", channelIcon = "🔊";
+        if (analyserL && analyserR) {
+          analyserL.getByteFrequencyData(bufferL);
+          analyserR.getByteFrequencyData(bufferR);
+          let sumL = 0, sumR = 0;
+          for (let i = 0; i < bufferL.length; i++) {
+            sumL += bufferL[i];
+            sumR += bufferR[i];
+          }
+          let avgL = sumL / bufferL.length;
+          let avgR = sumR / bufferR.length;
+          if (avgL > 5 && avgR > 5) {
+            let diff = Math.abs(avgL - avgR) / ((avgL + avgR) / 2);
+            channelInfo = diff < 0.2 ? "Estéreo" : "Mono";
+            channelIcon = channelInfo === "Estéreo" ? "🎧" : "🔊";
+          }
+        }
+
+        drawVUMeter(vuValue, peakHold);
+
+        const bufferSize = media.buffered.length ? (media.buffered.end(0) - media.currentTime).toFixed(1) + "s" : "-";
+        const extra = stream.type === "tv" ?
+          `<div class="box"><span>Formato</span><strong>${streamFormat}</strong></div><div class="box"><span>Container</span><strong>${containerFormat}</strong></div>` :
+          `<div class="box"><span>Bitrate</span><strong>${bitrate || "VBR"}</strong></div><div class="box"><span>Qualidade</span><strong>${codec}</strong></div>`;
+
+        infoGrid.innerHTML = `
+          <div class="box"><span>Codec</span><strong>${codec}</strong></div>
+          <div class="box"><span>Canais</span><strong>${channelIcon} ${channelInfo}</strong></div>
+          <div class="box"><span>Sample Rate</span><strong>${audioCtx.sampleRate} Hz</strong></div>
+          <div class="box"><span>Bitrate</span><strong>${bitrate || "--"}</strong></div>
+          ${extra}
+          <div class="box"><span>Buffer</span><strong>${bufferSize}</strong></div>
+          <div class="box"><span>Peak</span><strong>${peakHold.toFixed(1)} dBFS</strong></div>
+        `;
+      } catch (e) {
+        console.error("Erro no processamento:", e);
+        drawStaticVU();
+      }
+    } else {
+      drawStaticVU();
+      infoGrid.innerHTML = `
+        <div class="box"><span>Codec</span><strong>${codec}</strong></div>
+        <div class="box"><span>Canais</span><strong>🔊 --</strong></div>
+        <div class="box"><span>Sample Rate</span><strong>${audioCtx ? audioCtx.sampleRate + " Hz" : "--"}</strong></div>
+        <div class="box"><span>Bitrate</span><strong>${bitrate || "--"}</strong></div>
+        <div class="box"><span>Formato</span><strong>${streamFormat}</strong></div>
+        <div class="box"><span>Container</span><strong>${containerFormat}</strong></div>
+        <div class="box"><span>Buffer</span><strong>--</strong></div>
+        <div class="box"><span>Peak</span><strong>-60.0 dBFS</strong></div>
+      `;
+    }
+  }
+
+  function drawVUMeter(value, peak) {
+    ctx.clearRect(0, 0, 360, 230);
+    const cx = 180, cy = 190, r = 140, n = 32, w = 16, sp = 2, arc = Math.PI;
+    for (let i = 0; i < n; i++) {
+      let seg = -60 + (i / n) * 60;
+      let st = Math.PI + (i / n) * arc;
+      let en = Math.PI + ((i + 1) / n) * arc - (sp / r);
+      let col = seg > -6 ? "#f33" : seg > -18 ? "#fa0" : seg > -40 ? "#ff0" : "#3f3";
+      let act = value >= seg;
+      ctx.beginPath();
+      ctx.lineWidth = w;
+      ctx.strokeStyle = act ? col : "#1a2530";
+      if (act) { ctx.shadowColor = col; ctx.shadowBlur = 8; }
+      ctx.arc(cx, cy, r, st, en);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    let ang = Math.PI + ((value + 60) / 60) * arc;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 20, 0, 2 * Math.PI);
+    ctx.fillStyle = "#334455";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + (r - 30) * Math.cos(ang), cy + (r - 30) * Math.sin(ang));
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#fff";
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = "#aaa";
+    ctx.fill();
+    ctx.strokeStyle = "#666";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (peak > -60) {
+      let pang = Math.PI + ((peak + 60) / 60) * arc;
+      ctx.beginPath();
+      ctx.arc(cx + (r - 15) * Math.cos(pang), cy + (r - 15) * Math.sin(pang), 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
+      ctx.shadowColor = "#fff";
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.fillStyle = "#9fb3c8";
+    ctx.font = "11px Arial";
+    for (let i = -60; i <= 0; i += 10) {
+      let a = Math.PI + ((i + 60) / 60) * Math.PI;
+      let x = cx + (r - 55) * Math.cos(a);
+      let y = cy + (r - 55) * Math.sin(a);
+      ctx.fillText(i, x - 10, y + 4);
+    }
+  }
+
+  function drawStaticVU() {
+    drawVUMeter(-60, -60);
+  }
+
+  draw();
+  document.getElementById("grid").appendChild(card);
+  return card;
+}
+
+streams.forEach(stream => createCard(stream));
+
+// Função global para iniciar áudio e ativar todos os players em execução
+window.initAudioContext = function() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass();
+  }
+  audioCtx.resume().then(() => {
+    console.log("AudioContext ativado");
+    // Percorre todos os cards e ativa o áudio se o media estiver tocando
+    document.querySelectorAll('.card').forEach(card => {
+      const media = card.querySelector('video, audio');
+      if (media && !media.paused && card.activateAudio) {
+        card.activateAudio();
+      }
+    });
+  });
+};
+
+// Clique em qualquer lugar da página ativa o contexto (uma vez)
+document.body.addEventListener('click', () => {
+  if (!audioCtx) {
+    initAudioContext();
+  } else if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => {
+      document.querySelectorAll('.card').forEach(card => {
+        const media = card.querySelector('video, audio');
+        if (media && !media.paused && card.activateAudio) {
+          card.activateAudio();
+        }
+      });
+    });
+  }
+}, { once: true });
 </script>
 </body></html>
