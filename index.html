@@ -8,23 +8,27 @@
 
 <style>
 * {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
+    padding: 20px;
     background: #0a0f15;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #e6edf3;
-    padding: 20px;
+    min-height: 100vh;
 }
 
 h2 {
     text-align: center;
     color: #ffaa00;
     text-shadow: 0 0 20px #ffaa00;
-    margin-bottom: 30px;
+    margin: 0 0 30px 0;
     font-size: 28px;
+    padding: 0;
 }
 
 .grid {
@@ -33,8 +37,772 @@ h2 {
     gap: 25px;
     max-width: 1600px;
     margin: 0 auto;
+    padding: 0;
 }
 
+.card {
+    background: #111c26;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    border: 1px solid #2a3a4a;
+    margin: 0;
+}
+
+video, audio {
+    width: 100%;
+    border-radius: 10px;
+    background: #000;
+    margin: 10px 0 0 0;
+    display: block;
+}
+
+canvas {
+    width: 100%;
+    height: 230px;
+    margin: 10px 0 0 0;
+    background: #0a141f;
+    border-radius: 12px;
+    padding: 5px;
+    display: block;
+}
+
+.peak-led {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #330000;
+    margin: 8px auto;
+    transition: all 0.1s ease;
+}
+
+.peak-led.on {
+    background: #ff0000;
+    box-shadow: 0 0 20px #ff0000;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 15px 0 0 0;
+    padding: 0;
+}
+
+.box {
+    background: #162430;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    border-left: 3px solid #ffaa00;
+    margin: 0;
+}
+
+.box span {
+    color: #8a9bb0;
+    display: block;
+    margin: 0 0 4px 0;
+    padding: 0;
+}
+
+.box strong {
+    display: block;
+    font-size: 13px;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+
+/* Display dBFS */
+.dbfs-display {
+    background: #0a141f;
+    border: 2px solid #2a3a4a;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0 0 0;
+    text-align: center;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.dbfs-value {
+    font-size: 32px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: #ffaa00;
+    text-shadow: 0 0 15px #ffaa00;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.dbfs-label {
+    font-size: 12px;
+    color: #8a9bb0;
+    margin: 0 0 0 5px;
+    padding: 0;
+}
+
+.dbfs-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #5a6b80;
+    margin: 5px 0 0 0;
+    padding: 0 5px;
+}
+
+/* Header */
+.stream-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 15px 0;
+    background: #0a141f;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.stream-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #1e2a36;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+.stream-title {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.stream-title h3 {
+    margin: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+}
+
+.stream-title small {
+    color: #ffaa00;
+    font-size: 10px;
+    display: block;
+    margin: 4px 0 0 0;
+    padding: 0;
+}
+
+.stream-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 9px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.badge-tv {
+    background: #4a6a8a;
+    color: white;
+}
+
+.badge-radio {
+    background: #8a6a4a;
+    color: white;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4caf50;
+    animation: pulse 2s infinite;
+    margin: 0;
+    padding: 0;
+}
+
+.status-indicator.paused {
+    background: #ffaa00;
+    animation: none;
+}
+
+.status-indicator.error {
+    background: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.control-bar {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0 0 0;
+    justify-content: center;
+    padding: 0;
+}
+
+.control-btn {
+    background: #1e2a36;
+    border: 1px solid #3a4a5a;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 0;
+}
+
+.control-btn:hover {
+    background: #2a3a4a;
+    border-color: #ffaa00;
+}
+
+/* Rodapé limpo */
+.footer {
+    margin: 40px 0 0 0;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #2a3a4a;
+    color: #5a6b80;
+    font-size: 12px;
+    clear: both;
+}
+
+.footer a {
+    color: #ffaa00;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Remove qualquer vazamento */
+body::after,
+body::before,
+.grid::after,
+.grid::before,
+.card::after,
+.card::before {
+    display: none;
+    content: none;
+}
+</style>
+</head>
+<body>
+
+<h2>🎵 Painel Broadcast - VU Meter LED</h2>
+<div class="grid" id="grid"></div>
+
+<div class="footer">
+    <p>Painel Broadcast - VU Meter LED | Streams ao vivo | Atualizado em Fevereiro 2026</p>
+    <p><a href="#" onclick="return false;">Termos de Uso</a> | <a href="#" onclick="return false;">Privacidade</a></p>
+</div>
+
+<script>
+// Configuração dos streams
+const streams = [
+    { 
+        name: "TV O Povo", 
+        url: "https://v-us-01.wisestream.io/memfs/e8740862-7a1f-45f3-acb2-4f357e144059.m3u8", 
+        type: "tv",
+        icon: "📺"
+    },
+    { 
+        name: "TV FDR", 
+        url: "https://v-us-01.wisestream.io/memfs/e4ade538-7924-4359-81ef-b9d4dd229e91.m3u8", 
+        type: "tv",
+        icon: "📡"
+    },
+    { 
+        name: "CBN Cariri", 
+        url: "https://ice-br.fabricahost.com.br/play/cbncariri", 
+        type: "radio",
+        icon: "🔊"
+    },
+    { 
+        name: "CBN Fortaleza", 
+        url: "https://ice-br.fabricahost.com.br/play/cbnfortaleza", 
+        type: "radio",
+        icon: "🎙️"
+    },
+    { 
+        name: "Nova Brasil", 
+        url: "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_FORAAC.aac", 
+        type: "radio",
+        icon: "🎵"
+    },
+    { 
+        name: "Rádio Maria FM", 
+        url: "https://dreamsiteradiocp6.com/proxy/rmbrasile?mp=/stream", 
+        type: "radio",
+        icon: "🙏"
+    }
+];
+
+// Inicializa AudioContext
+let audioCtx = null;
+
+// Função para inicializar AudioContext
+function initAudioContext() {
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        console.log("AudioContext inicializado:", audioCtx.state);
+    }
+    return audioCtx;
+}
+
+// Cria os cards
+streams.forEach(createCard);
+
+function createCard(stream) {
+    const card = document.createElement("div");
+    card.className = "card";
+    
+    const badgeClass = stream.type === "tv" ? "badge-tv" : "badge-radio";
+    const badgeText = stream.type === "tv" ? "📺 TV" : "📻 RÁDIO";
+
+    card.innerHTML = `
+    <div class="stream-header">
+        <div class="stream-icon">${stream.icon}</div>
+        <div class="stream-title">
+            <h3>${stream.name} <span class="stream-badge ${badgeClass}">${badgeText}</span></h3>
+            <small>${stream.url.split('/')[2]}</small>
+        </div>
+        <div class="status-indicator paused" id="status-${stream.name.replace(/\s/g, '')}"></div>
+    </div>
+    ${stream.type === "tv" ? "<video controls crossorigin='anonymous' preload='none'></video>" : "<audio controls crossorigin='anonymous' preload='none'></audio>"}
+    <div class="control-bar">
+        <button class="control-btn" onclick="initAudioContext()">🔊 Iniciar Áudio</button>
+    </div>
+    <div class="dbfs-display">
+        <span class="dbfs-value" id="dbfs-${stream.name.replace(/\s/g, '')}">-60.0</span>
+        <span class="dbfs-label">dBFS</span>
+        <div class="dbfs-scale">
+            <span>-60</span>
+            <span>-40</span>
+            <span>-20</span>
+            <span>0</span>
+        </div>
+    </div>
+    <canvas></canvas>
+    <div class="peak-led"></div>
+    <div class="info-grid"></div>
+    `;
+
+    const media = card.querySelector("video") || card.querySelector("audio");
+    const canvas = card.querySelector("canvas");
+    const ctx = canvas.getContext("2d");
+    const peakLed = card.querySelector(".peak-led");
+    const infoGrid = card.querySelector(".info-grid");
+    const dbfsElement = card.querySelector(`#dbfs-${stream.name.replace(/\s/g, '')}`);
+    const statusIndicator = card.querySelector(`#status-${stream.name.replace(/\s/g, '')}`);
+
+    canvas.width = 360;
+    canvas.height = 230;
+
+    let codec = "-";
+    let bitrate = "-";
+    let streamFormat = "-";
+    let containerFormat = stream.url.endsWith(".m3u8") ? "HLS" : "Direto";
+    let source = null;
+    let analyser = null;
+    let analyserL = null;
+    let analyserR = null;
+    let audioSetupDone = false;
+
+    // Configura HLS para streams .m3u8
+    if (stream.url.endsWith(".m3u8")) {
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90
+            });
+            
+            hls.loadSource(stream.url);
+            hls.attachMedia(media);
+            
+            hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+                if (data.levels && data.levels.length > 0) {
+                    const level = data.levels[0];
+                    codec = level.audioCodec || "AAC";
+                    if (codec.includes("mp4a.40.2")) codec = "AAC-LC";
+                    else if (codec.includes("mp4a.40.5")) codec = "AAC-HE";
+                    streamFormat = level.videoCodec ? "A+V" : "Áudio";
+                }
+                statusIndicator.className = "status-indicator";
+            });
+            
+            hls.on(Hls.Events.FRAG_LOADED, (e, data) => {
+                if (data.frag.stats) {
+                    const bitsLoaded = data.frag.stats.loaded * 8;
+                    const duration = data.frag.duration;
+                    bitrate = Math.round(bitsLoaded / 1000 / duration) + " kbps";
+                }
+            });
+
+            hls.on(Hls.Events.ERROR, (e, data) => {
+                console.error("HLS Error:", data);
+                statusIndicator.className = "status-indicator error";
+            });
+        } else if (media.canPlayType('application/vnd.apple.mpegurl')) {
+            media.src = stream.url;
+        }
+    } else {
+        media.src = stream.url;
+        if (stream.url.includes(".aac")) codec = "AAC-LC";
+        else if (stream.url.includes(".mp3")) codec = "MP3";
+        else if (stream.url.includes("dreamsiteradiocp")) codec = "MP3";
+        else codec = "Áudio stream";
+        
+        // Estimativa de bitrate para rádios
+        if (stream.url.includes("cbn")) bitrate = "64 kbps";
+        else if (stream.url.includes("novabrasil")) bitrate = "128 kbps";
+        else if (stream.url.includes("maria")) bitrate = "128 kbps";
+    }
+
+    // Função para configurar análise de áudio
+    function setupAudioAnalysis() {
+        if (audioSetupDone || !audioCtx || audioCtx.state !== 'running') return false;
+        
+        try {
+            if (!source) {
+                source = audioCtx.createMediaElementSource(media);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048;
+                
+                // Para detecção estéreo
+                const splitter = audioCtx.createChannelSplitter(2);
+                analyserL = audioCtx.createAnalyser();
+                analyserR = audioCtx.createAnalyser();
+                analyserL.fftSize = 256;
+                analyserR.fftSize = 256;
+                
+                source.connect(analyser);
+                source.connect(splitter);
+                splitter.connect(analyserL, 0);
+                splitter.connect(analyserR, 1);
+                analyser.connect(audioCtx.destination);
+                
+                audioSetupDone = true;
+                statusIndicator.className = "status-indicator";
+                console.log("Áudio configurado para:", stream.name);
+                return true;
+            }
+        } catch (e) {
+            console.error("Erro ao configurar áudio:", e);
+            statusIndicator.className = "status-indicator error";
+        }
+        return false;
+    }
+
+    // Tenta configurar quando o áudio começar
+    media.addEventListener('play', () => {
+        if (!audioCtx) {
+            initAudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'running') {
+            setupAudioAnalysis();
+        }
+    });
+
+    const buffer = new Uint8Array(2048);
+    const bufferL = new Uint8Array(128);
+    const bufferR = new Uint8Array(128);
+    
+    let vuValue = -60;
+    let peakHold = -60;
+    let lastDb = -60;
+
+    function draw() {
+        requestAnimationFrame(draw);
+
+        // Atualiza status do AudioContext
+        if (audioCtx) {
+            if (audioCtx.state === 'running' && media.paused) {
+                statusIndicator.className = "status-indicator paused";
+            } else if (audioCtx.state === 'running' && !media.paused) {
+                statusIndicator.className = "status-indicator";
+            } else if (audioCtx.state === 'suspended') {
+                statusIndicator.className = "status-indicator paused";
+            }
+        }
+
+        // Processa áudio se disponível
+        if (analyser && audioCtx && audioCtx.state === 'running' && !media.paused) {
+            try {
+                analyser.getByteTimeDomainData(buffer);
+
+                let sum = 0;
+                let peak = 0;
+
+                for (let i = 0; i < buffer.length; i++) {
+                    let v = (buffer[i] - 128) / 128;
+                    sum += v * v;
+                    peak = Math.max(peak, Math.abs(v));
+                }
+
+                let rms = Math.sqrt(sum / buffer.length);
+                let db = 20 * Math.log10(rms || 0.00001);
+                db = Math.max(-60, Math.min(0, db));
+                lastDb = db;
+
+                // Ballística VU
+                vuValue += (db - vuValue) * 0.15;
+
+                // Peak Hold
+                let peakDb = 20 * Math.log10(peak || 0.00001);
+                peakDb = Math.max(-60, Math.min(0, peakDb));
+
+                if (peakDb > peakHold) {
+                    peakHold = peakDb;
+                } else {
+                    peakHold -= 0.5;
+                }
+
+                if (peak > 0.98) peakLed.classList.add("on");
+                else peakLed.classList.remove("on");
+
+                dbfsElement.textContent = vuValue.toFixed(1);
+                
+                // Cor do display
+                if (vuValue > -6) {
+                    dbfsElement.style.color = '#ff5555';
+                    dbfsElement.style.textShadow = '0 0 15px #ff0000';
+                } else if (vuValue > -18) {
+                    dbfsElement.style.color = '#ffaa00';
+                    dbfsElement.style.textShadow = '0 0 10px #ffaa00';
+                } else if (vuValue > -40) {
+                    dbfsElement.style.color = '#ffff00';
+                    dbfsElement.style.textShadow = '0 0 8px #ffff00';
+                } else {
+                    dbfsElement.style.color = '#33ff33';
+                    dbfsElement.style.textShadow = '0 0 5px #33ff33';
+                }
+
+                // Detectar mono/estéreo
+                let channelInfo = "Mono";
+                let channelIcon = "🔊";
+                
+                if (analyserL && analyserR) {
+                    analyserL.getByteFrequencyData(bufferL);
+                    analyserR.getByteFrequencyData(bufferR);
+                    
+                    let sumL = 0, sumR = 0;
+                    for (let i = 0; i < bufferL.length; i++) {
+                        sumL += bufferL[i];
+                        sumR += bufferR[i];
+                    }
+                    
+                    let avgL = sumL / bufferL.length;
+                    let avgR = sumR / bufferR.length;
+                    
+                    if (avgL > 5 && avgR > 5) {
+                        let diff = Math.abs(avgL - avgR) / ((avgL + avgR) / 2);
+                        channelInfo = diff < 0.2 ? "Estéreo" : "Mono";
+                        channelIcon = channelInfo === "Estéreo" ? "🎧" : "🔊";
+                    }
+                }
+
+                // Desenha o VU meter
+                drawVUMeter(vuValue, peakHold);
+
+                // Informações técnicas
+                const bufferSize = media.buffered.length ?
+                    (media.buffered.end(0) - media.currentTime).toFixed(1) + "s" : "-";
+
+                // Informações específicas por tipo
+                let typeSpecificInfo = "";
+                if (stream.type === "tv") {
+                    typeSpecificInfo = `
+                    <div class="box"><span>Formato</span><strong>${streamFormat}</strong></div>
+                    <div class="box"><span>Container</span><strong>${containerFormat}</strong></div>
+                    `;
+                } else {
+                    typeSpecificInfo = `
+                    <div class="box"><span>Bitrate</span><strong>${bitrate || 'VBR'}</strong></div>
+                    <div class="box"><span>Qualidade</span><strong>${codec}</strong></div>
+                    `;
+                }
+
+                infoGrid.innerHTML = `
+                <div class="box"><span>Codec</span><strong>${codec}</strong></div>
+                <div class="box"><span>Canais</span><strong>${channelIcon} ${channelInfo}</strong></div>
+                <div class="box"><span>Sample Rate</span><strong>${audioCtx.sampleRate} Hz</strong></div>
+                <div class="box"><span>Bitrate</span><strong>${bitrate || '--'}</strong></div>
+                ${typeSpecificInfo}
+                <div class="box"><span>Buffer</span><strong>${bufferSize}</strong></div>
+                <div class="box"><span>Peak</span><strong>${peakHold.toFixed(1)} dBFS</strong></div>
+                `;
+
+            } catch (e) {
+                console.error("Erro no processamento:", e);
+                drawStaticVU();
+            }
+        } else {
+            // Sem áudio, mostra VU estático
+            drawStaticVU();
+            
+            // Atualiza info básica
+            infoGrid.innerHTML = `
+            <div class="box"><span>Codec</span><strong>${codec}</strong></div>
+            <div class="box"><span>Canais</span><strong>🔊 --</strong></div>
+            <div class="box"><span>Sample Rate</span><strong>${audioCtx ? audioCtx.sampleRate + ' Hz' : '--'}</strong></div>
+            <div class="box"><span>Bitrate</span><strong>${bitrate || '--'}</strong></div>
+            <div class="box"><span>Formato</span><strong>${streamFormat}</strong></div>
+            <div class="box"><span>Container</span><strong>${containerFormat}</strong></div>
+            <div class="box"><span>Buffer</span><strong>--</strong></div>
+            <div class="box"><span>Peak</span><strong>-60.0 dBFS</strong></div>
+            `;
+        }
+    }
+
+    function drawVUMeter(value, peak) {
+        ctx.clearRect(0, 0, 360, 230);
+
+        const cx = 180;
+        const cy = 190;
+        const radius = 140;
+        const numLeds = 32;
+        const ledWidth = 16;
+        const spacing = 2;
+        const totalArc = Math.PI;
+
+        // Desenha LEDs
+        for (let i = 0; i < numLeds; i++) {
+            let segDb = -60 + (i / numLeds) * 60;
+            let startAngle = Math.PI + (i / numLeds) * totalArc;
+            let endAngle = Math.PI + ((i + 1) / numLeds) * totalArc - (spacing / radius);
+
+            let ledColor;
+            if (segDb > -6) ledColor = "#ff3333";
+            else if (segDb > -18) ledColor = "#ffaa00";
+            else if (segDb > -40) ledColor = "#ffff00";
+            else ledColor = "#33ff33";
+
+            let isActive = value >= segDb;
+
+            ctx.beginPath();
+            ctx.lineWidth = ledWidth;
+            ctx.strokeStyle = isActive ? ledColor : "#1a2530";
+            
+            if (isActive) {
+                ctx.shadowColor = ledColor;
+                ctx.shadowBlur = 8;
+            }
+
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Ponteiro
+        let pointerAngle = Math.PI + ((value + 60) / 60) * totalArc;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 20, 0, 2 * Math.PI);
+        ctx.fillStyle = "#334455";
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + (radius - 30) * Math.cos(pointerAngle), 
+                   cy + (radius - 30) * Math.sin(pointerAngle));
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Círculo central (parafuso)
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = "#aaaaaa";
+        ctx.fill();
+        ctx.strokeStyle = "#666666";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Peak
+        if (peak > -60) {
+            let peakAngle = Math.PI + ((peak + 60) / 60) * totalArc;
+            ctx.beginPath();
+            ctx.arc(cx + (radius - 15) * Math.cos(peakAngle),
+                    cy + (radius - 15) * Math.sin(peakAngle),
+                    5, 0, 2 * Math.PI);
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#ffffff";
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Escala dB
+        ctx.fillStyle = "#9fb3c8";
+        ctx.font = "11px Arial";
+        for (let i = -60; i <= 0; i += 10) {
+            let angle = Math.PI + ((i + 60) / 60) * Math.PI;
+            let x = cx + (radius - 55) * Math.cos(angle);
+            let y = cy + (radius - 55) * Math.sin(angle);
+            ctx.fillText(i, x - 10, y + 4);
+        }
+    }
+
+    function drawStaticVU() {
+        drawVUMeter(-60, -60);
+    }
+
+    // Inicia animação
+    draw();
+    
+    document.getElementById("grid").appendChild(card);
+}
+
+// Função global para iniciar áudio
+window.initAudioContext = function() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume().then(() => {
+        audioCtx = ctx;
+        console.log("AudioContext iniciado manualmente");
+        
+        // Tenta configurar todos os cards
+        document.querySelectorAll('audio, video').forEach(media => {
+            if (!media.paused) {
+                // Dispara evento play para configurar
+                media.dispatchEvent(new Event('play'));
+            }
+        });
+    });
+};
+
+// Inicialização automática no clique
+document.body.addEventListener('click', () => {
+    if (!audioCtx) {
+        initAudioContext();
+    } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}, { once: true });
+</script>
+</body>
+</html>
 .card {
     background: #111c26;
     border-radius: 18px;
@@ -1318,4 +2086,5 @@ window.fetch = function(url, options) {
 </script>
 </body>
 </html>
+
 
